@@ -1,0 +1,22 @@
+{
+  "_readme": "The problem statement for this experiment. Physics agents receive this raw. Non-physics agents (if meta_comm is enabled) receive a MetaCommunicator translation of it.",
+
+  "id":           "unique_problem_id",
+  "title":        "Short Title of the Problem",
+  "core_question": "The central question agents will discuss. Be precise and open-ended enough to sustain multiple rounds.",
+
+  "background": {
+    "summary": "2–4 paragraphs of context. What is known, what is contested, why it matters.",
+    "core_tensions": {
+      "tension_name_1": "Description of the first fundamental tension or unresolved conflict.",
+      "tension_name_2": "Description of the second tension.",
+      "tension_name_3": "Add as many tensions as relevant."
+    }
+  },
+
+  "metadata": {
+    "domain":        "theoretical_physics",
+    "difficulty":    "frontier",
+    "added":         "2026-01-01"
+  }
+}

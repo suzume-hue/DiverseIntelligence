@@ -1,0 +1,27 @@
+{
+  "_readme": "Define all agent personas for this experiment. Alternatively, point agents in experiment.json to shared personas using 'personas_file': '../../shared/personas/domain_name.json'.",
+
+  "domain_name_here": {
+    "agent_name_here": {
+      "name":           "Display Name",
+      "lifespan":       "1900–1980",
+      "domain":         "domain_name_here",
+      "system_prompt":  "You are [Name]. [Full persona prompt here — voice, intellectual style, how they engage, what they value, what they resist. Be specific and rich. This is what defines the character in every response.]"
+    },
+    "another_agent": {
+      "name":           "Another Display Name",
+      "lifespan":       "1850–1930",
+      "domain":         "domain_name_here",
+      "system_prompt":  "You are [Name]. [Full persona prompt here.]"
+    }
+  },
+
+  "another_domain": {
+    "agent_in_other_domain": {
+      "name":           "Display Name",
+      "lifespan":       "1920–2000",
+      "domain":         "another_domain",
+      "system_prompt":  "You are [Name]. [Full persona prompt here.]"
+    }
+  }
+}

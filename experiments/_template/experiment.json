@@ -1,0 +1,92 @@
+{
+  "_readme": "This is the master config for one experiment. Edit hyperparameters here. For agents/problem/judge content, edit the corresponding JSON files in this directory. Run 'python validate.py experiments/YOUR_EXPERIMENT' before running.",
+
+  "name": "My Experiment Name",
+  "description": "What this experiment is investigating.",
+  "version": "1.0",
+
+  "personas_file": "personas.json",
+  "problem_file":  "problem.json",
+  "judge_file":    "judge.json",
+
+  "num_runs": 5,
+
+  "agents": [
+    {
+      "_note": "name and domain must exactly match keys in personas.json",
+      "name":   "agent_name_here",
+      "domain": "domain_name_here"
+    },
+    {
+      "name":   "another_agent",
+      "domain": "another_domain"
+    }
+  ],
+
+  "meta_comm": {
+    "enabled": false,
+    "_enabled_note": "Set true to enable the MetaCommunicator translation layer between domain groups.",
+
+    "persona_file": "meta_comm.json",
+    "_persona_file_note": "Path to MetaCommunicator persona. Can reference shared: '../../shared/personas/meta_communication.json'",
+
+    "groups": [
+      {
+        "label": "group_a",
+        "domains": ["domain_one"],
+        "_note": "Agents in this group speak to agents in group_b via MetaCommunicator"
+      },
+      {
+        "label": "group_b",
+        "domains": ["domain_two", "domain_three"],
+        "_note": "Add as many domains per group as needed"
+      }
+    ],
+    "_groups_note": "Translation happens BETWEEN groups, not within them. Add more groups if needed."
+  },
+
+  "models": {
+    "_note": "Assign a model to each role. provider must be 'groq' or 'google'. model_id must match a key in config/rate_limits.json.",
+    "agent": {
+      "provider":   "groq",
+      "model_id":   "llama-3.3-70b-versatile",
+      "max_tokens": 1500
+    },
+    "meta_comm": {
+      "provider":   "google",
+      "model_id":   "gemma-4-31b-it",
+      "max_tokens": 1000
+    },
+    "judge": {
+      "provider":   "google",
+      "model_id":   "gemini-3.1-flash-lite",
+      "max_tokens": 400
+    },
+    "reflector": {
+      "provider":   "groq",
+      "model_id":   "llama-3.3-70b-versatile",
+      "max_tokens": 800
+    }
+  },
+
+  "temperature_schedule": {
+    "_note": "agents: one value per run (list) or a single value for all runs. Other roles: scalar.",
+    "agents":    [0.70, 0.75, 0.80, 0.85, 0.90],
+    "meta_comm": 0.35,
+    "judge":     0.10,
+    "reflector": 0.40
+  },
+
+  "memory": {
+    "embedding_model":            "all-MiniLM-L6-v2",
+    "retrieval_top_k":            3,
+    "context_window_threshold_pct": 0.65,
+    "max_reflections_per_round":  null,
+    "_note": "max_reflections_per_round: null = agent decides freely"
+  },
+
+  "session": {
+    "max_rounds": 30,
+    "_note": "Hard cap. Judge closes before this in normal operation."
+  }
+}
