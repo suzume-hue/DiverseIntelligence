@@ -128,21 +128,6 @@ DiverseIntelligence/
 
 ---
 
-## Handing Off to Another Claude Instance
-
-If you run out of Claude credits, open a new chat and share these files:
-
-1. `HANDOFF.md` — context, architecture, and the mandatory update convention
-2. `CHANGELOG.md` — what every previous instance changed (always up to date)
-3. `PROJECT_MAP.json` — dependency map, what's safe to edit
-4. The specific file(s) you want changed
-
-The new instance can continue without needing the full conversation history.
-
-**Every Claude instance that makes changes must append an entry to `CHANGELOG.md` before ending its session.** This is the mechanism that keeps the handoff docs accurate over time.
-
----
-
 ## Output Data
 
 Session data is written to `experiments/<name>/sessions/run_N/rounds/`.  
