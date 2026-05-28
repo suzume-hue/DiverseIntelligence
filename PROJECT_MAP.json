@@ -1,0 +1,163 @@
+{
+  "_purpose": "Machine-readable project map for Claude instances picking up this project. Read this file first, then HANDOFF.md, then the specific files you need to modify.",
+  "_last_updated": "2026-05-08",
+  "_project": "DiverseIntelligence",
+  "_version": "2.0",
+
+  "entry_points": {
+    "run.py":      "Universal CLI runner. Args: experiment_dir [--run N] [--status]. No code changes needed to run experiments.",
+    "validate.py": "Pre-run validation. Args: experiment_dir.",
+    "status.py":   "Status overview. Args: [--watch].",
+    "ui.py":       "Textual TUI. No args. Requires: textual, rich."
+  },
+
+  "core_modules": {
+    "core/src/bootstrap.py": {
+      "purpose": "Loads config, builds LLMClient. Called by run.py and ui.py.",
+      "depends_on": ["core/src/utils/config_loader.py", "core/src/api/client.py", "core/src/api/rate_tracker.py"],
+      "safe_to_edit": true,
+      "break_risk": "low"
+    },
+    "core/src/session_runner.py": {
+      "purpose": "Orchestrates one full MACP session. Handles resume logic.",
+      "depends_on": ["core/src/utils/checkpoint.py", "core/src/utils/config_loader.py", "core/src/memory/store.py", "core/src/protocol/round_runner.py"],
+      "safe_to_edit": true,
+      "break_risk": "medium — changing phase order or checkpoint calls affects resumption"
+    },
+    "core/src/utils/config_loader.py": {
+      "purpose": "Loads and validates all config from an experiment directory. Resolves agent personas from nested/shared files.",
+      "depends_on": ["experiment.json (per experiment)", "personas.json or shared files", "rate_limits.json"],
+      "safe_to_edit": true,
+      "break_risk": "high — changing validate_agents() affects all experiments"
+    },
+    "core/src/utils/checkpoint.py": {
+      "purpose": "Atomic JSONL event append, session state R/W, config snapshot/conflict detection.",
+      "depends_on": [],
+      "safe_to_edit": false,
+      "break_risk": "critical — changes here can corrupt resumption logic"
+    },
+    "core/src/api/client.py": {
+      "purpose": "Unified LLM client for Groq and Google AI Studio (OpenAI-compat endpoint).",
+      "depends_on": ["core/src/api/rate_tracker.py"],
+      "safe_to_edit": true,
+      "break_risk": "medium — adding a provider requires mirroring the existing pattern"
+    },
+    "core/src/api/rate_tracker.py": {
+      "purpose": "Tracks RPD per key per model. Rotates keys on 429. Raises QuotaExhaustedError.",
+      "depends_on": ["state/key_usage.json (auto-created)"],
+      "safe_to_edit": true,
+      "break_risk": "medium"
+    },
+    "core/src/agents/agent.py": {
+      "purpose": "One agent turn: retrieves reflections, calls actor LLM, parses MACP XML.",
+      "depends_on": ["core/src/memory/store.py", "core/src/memory/retriever.py"],
+      "safe_to_edit": true,
+      "break_risk": "low"
+    },
+    "core/src/agents/critic.py": {
+      "purpose": "Internal critic pass. Evaluates draft agent messages for evasion of direct challenges. Triggers revision pass if evasion detected. Advisory — failures fall back to original draft.",
+      "depends_on": ["core/src/api/client.py"],
+      "safe_to_edit": true,
+      "break_risk": "low — failures are silent, original draft returned"
+    },
+    "core/src/memory/belief_store.py": {
+      "purpose": "Per-agent belief persistence. Tracks propositions with confidence, status (held/suspended/retracted), and revision history. Mirrors MemoryStore patterns.",
+      "depends_on": ["core/src/utils/checkpoint.py"],
+      "safe_to_edit": true,
+      "break_risk": "medium — index format changes break belief_revision.py reads"
+    },
+    "core/src/memory/belief_revision.py": {
+      "purpose": "Post-round belief revision LLM pass. Prompts agents to assert/revise/retract/suspend beliefs based on what they said this round. Phase 4b in round_runner.",
+      "depends_on": ["core/src/api/client.py", "core/src/memory/belief_store.py"],
+      "safe_to_edit": true,
+      "break_risk": "low"
+    },
+    "core/src/protocol/argument_graph.py": {
+      "purpose": "Session-level argument graph. Tracks claims, attack/support relationships, commitment violations, cycling. Updated Phase 1b. Queried by judge Phase 5.",
+      "depends_on": ["core/src/api/client.py"],
+      "safe_to_edit": true,
+      "break_risk": "low — judge falls back gracefully if summary is empty"
+    },
+      "purpose": "MetaCommunicator bidirectional translation. Group-aware. Called once per sender/receiver pair.",
+      "depends_on": ["core/src/api/client.py"],
+      "safe_to_edit": true,
+      "break_risk": "low"
+    },
+    "core/src/memory/store.py": {
+      "purpose": "Reflection R/W, index management. One store per agent per session.",
+      "depends_on": ["core/src/utils/checkpoint.py"],
+      "safe_to_edit": true,
+      "break_risk": "medium — index format changes break retrieval"
+    },
+    "core/src/memory/retriever.py": {
+      "purpose": "Local embedding-based similarity retrieval (all-MiniLM-L6-v2). No API calls.",
+      "depends_on": ["sentence-transformers library"],
+      "safe_to_edit": true,
+      "break_risk": "low"
+    },
+    "core/src/memory/reflector.py": {
+      "purpose": "Post-round reflection generation via actor LLM + persona prompt. Returns structured JSON.",
+      "depends_on": ["core/src/api/client.py", "core/src/memory/store.py"],
+      "safe_to_edit": true,
+      "break_risk": "low"
+    },
+    "core/src/protocol/hub.py": {
+      "purpose": "Assembles split (meta_comm) or unified broadcasts. Group-aware.",
+      "depends_on": [],
+      "safe_to_edit": true,
+      "break_risk": "medium — broadcast format changes affect agent input"
+    },
+    "core/src/protocol/judge.py": {
+      "purpose": "Judge LLM call. Parses CONTINUE/CLOSE XML. Uses running observation log.",
+      "depends_on": ["core/src/api/client.py"],
+      "safe_to_edit": true,
+      "break_risk": "low"
+    },
+    "core/src/protocol/round_runner.py": {
+      "purpose": "Phase-by-phase round execution with atomic saves. Core of the experiment loop.",
+      "depends_on": ["core/src/utils/checkpoint.py", "core/src/agents/agent.py", "core/src/agents/meta_communicator.py", "core/src/memory/reflector.py", "core/src/protocol/hub.py", "core/src/protocol/judge.py"],
+      "safe_to_edit": false,
+      "break_risk": "critical — phase ordering and checkpoint calls must stay consistent"
+    }
+  },
+
+  "config_files": {
+    "config/api_keys.json": "Provider key pools. Add keys freely — no code changes needed.",
+    "config/rate_limits.json": "Per-model quotas. Add models here when using new ones.",
+    "experiments/*/experiment.json": "Per-experiment hyperparameters. Safe to edit — validated at startup.",
+    "experiments/*/personas.json": "Agent personas. Add domains and agents freely.",
+    "experiments/*/problem.json": "Problem statement. Edit freely.",
+    "experiments/*/judge.json": "Judge persona prompt. Edit freely.",
+    "experiments/*/meta_comm.json": "MetaCommunicator persona. Edit freely.",
+    "shared/personas/*.json": "Shared persona libraries. Reference from experiment agents.",
+    "shared/problems/*.json": "Shared problem definitions."
+  },
+
+  "data_outputs": {
+    "experiments/*/sessions/run_N/session_state.json": "Checkpoint — do not edit manually",
+    "experiments/*/sessions/run_N/rounds/round_N.jsonl": "Event log — append-only, do not edit",
+    "experiments/*/sessions/run_N/memory/*/reflection_index.json": "Reflection index — do not edit",
+    "experiments/*/.di_state/": "Config snapshots — do not edit",
+    "state/key_usage.json": "API quota tracking — do not edit"
+  },
+
+  "adding_providers": {
+    "steps": [
+      "1. Add provider base URL to PROVIDER_BASE_URLS in core/src/api/client.py",
+      "2. Add key pool to config/api_keys.json",
+      "3. Add model entries to config/rate_limits.json",
+      "4. Add reset config to RESET_CONFIG in core/src/api/rate_tracker.py"
+    ]
+  },
+
+  "adding_experiments": {
+    "steps": [
+      "1. Copy experiments/_template/ to experiments/your_name/",
+      "2. Edit experiment.json (hyperparameters, agent list, models)",
+      "3. Edit personas.json (agent characters) or reference shared/",
+      "4. Edit problem.json (what they discuss)",
+      "5. Run: python validate.py experiments/your_name",
+      "6. Run: python run.py experiments/your_name"
+    ]
+  }
+}
